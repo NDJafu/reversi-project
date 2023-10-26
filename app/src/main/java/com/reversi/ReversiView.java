@@ -9,33 +9,31 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+
 import androidx.annotation.NonNull;
+
 import com.reversi.game.GameLogic;
 import com.reversi.helpers.Player;
 import com.reversi.helpers.Position;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 public class ReversiView extends SurfaceView implements SurfaceHolder.Callback {
+    public static Player[][] board;
     private final int BOARD_SIZE = 8;
     private final int BOARD_COLOR = Color.GREEN;
     private final int BLACK_COLOR = Color.BLACK;
     private final int WHITE_COLOR = Color.WHITE;
-    int canvasWidth;
-    int canvasHeight;
-
-
-    private SurfaceHolder surfaceHolder;
-    public static Player[][] board;
-
     public Map<Player, Integer> discCount;
     public Player currentPlayer;
-    public boolean gameOver;
-    public Player winner;
     public Map<Position, List<Position>> legalMoves;
+    private int CELL_SIZE;
+    private int canvasWidth;
+    private int canvasHeight;
+    private SurfaceHolder surfaceHolder;
 
     public ReversiView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -43,6 +41,10 @@ public class ReversiView extends SurfaceView implements SurfaceHolder.Callback {
         surfaceHolder.addCallback(this);
 
         board = new Player[BOARD_SIZE][BOARD_SIZE];
+
+        for (Player[] row : board) {
+            Arrays.fill(row, Player.None);
+        }
 
         board[3][3] = Player.White;
         board[4][4] = Player.White;
@@ -72,13 +74,18 @@ public class ReversiView extends SurfaceView implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder surfaceHolder) {
+        render();
+    }
+
+    private void render() {
         Canvas canvas = surfaceHolder.lockCanvas();
         canvas.drawColor(BOARD_COLOR);
 
         canvasWidth = canvas.getWidth();
         canvasHeight = canvas.getHeight();
 
-        int CELL_SIZE = canvasWidth / BOARD_SIZE;
+        CELL_SIZE = canvasWidth / BOARD_SIZE;
+
         Paint paint = new Paint();
         paint.setStyle(Paint.Style.FILL);
 
@@ -96,14 +103,9 @@ public class ReversiView extends SurfaceView implements SurfaceHolder.Callback {
 
         for (int r = 0; r < BOARD_SIZE; r++) {
             for (int c = 0; c < BOARD_SIZE; c++) {
-
-
                 int width = r * CELL_SIZE + CELL_SIZE / 2;
                 int height = c * CELL_SIZE + CELL_SIZE / 2;
                 int radius = CELL_SIZE / 2 - 4;
-
-
-
 
                 //Placing first 4
                 if (board[r][c] == Player.Black) {
@@ -129,71 +131,27 @@ public class ReversiView extends SurfaceView implements SurfaceHolder.Callback {
 
     }
 
-    public boolean isMovable(Position pos) {
-        if (!legalMoves.containsKey(pos)) {
-            return false;
-        }
-
-        Player playerMoving = currentPlayer;
-        List<Position> outflanked = legalMoves.get(pos);
-        flipDiscs(outflanked);
-        updateDiscCounts(playerMoving, outflanked.size());
-        passTurn();
-
-
-        board[pos.row][pos.col] = playerMoving;
-
-        return true;
-    }
-
-    private void flipDiscs(List<Position> positions) {
-        for (Position pos : positions) {
-            board[pos.row][pos.col] = Player.Opponent(board[pos.row][pos.col]);
-        }
-    }
-
-    private void updateDiscCounts(Player movingPlayer, int outflankedCount) {
-        discCount.put(movingPlayer, discCount.get(movingPlayer) + outflankedCount + 1);
-        discCount.put(Player.Opponent(movingPlayer), discCount.get(movingPlayer) - outflankedCount);
-    }
-
     private void changePlayer() {
         currentPlayer = Player.Opponent(currentPlayer);
         legalMoves = GameLogic.findLegalMoves(currentPlayer);
     }
 
-    private Player findWinner() {
-        if (discCount.get(Player.Black) > discCount.get(Player.White)) {
-            return Player.Black;
-        }
-        if (discCount.get(Player.White) > discCount.get(Player.Black)) {
-            return Player.White;
-        }
-        return Player.None;
-    }
-
-    private void passTurn() {
-        changePlayer();
-
-        if (!legalMoves.isEmpty()) {
-            return;
-        }
-
-        changePlayer();
-
-        if (legalMoves.isEmpty()) {
-            currentPlayer = Player.None;
-            gameOver = true;
-            winner = findWinner();
-        }
-    }
-
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        int cordsX = (int) (event.getX() / (canvasWidth / BOARD_SIZE));
-        int cordsY = (int) (event.getY() / (canvasHeight / BOARD_SIZE));
-        if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            Log.d("Where: ", cordsX + " " + cordsY);
+        super.onTouchEvent(event);
+        int row = (int) (event.getX() / (canvasWidth / BOARD_SIZE));
+        int col = (int) (event.getY() / (canvasHeight / BOARD_SIZE));
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                if (board[row][col] == Player.None) {
+                    Log.d("Whose: ", String.valueOf(currentPlayer));
+                    board[row][col] = currentPlayer;
+                    render();
+                    changePlayer();
+                }
+                break;
+            default:
+                break;
         }
         return true;
     }
