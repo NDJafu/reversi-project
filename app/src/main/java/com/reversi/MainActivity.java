@@ -13,9 +13,5 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        reversiView = findViewById(R.id.board);
-
-        Log.d("Size of surface view", "Value: " + reversiView.getWidth());
-
     }
 }
