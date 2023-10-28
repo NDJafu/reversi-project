@@ -8,11 +8,17 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+
 import androidx.annotation.NonNull;
+
 import com.reversi.helpers.Player;
 import com.reversi.helpers.Position;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class ReversiView extends SurfaceView implements SurfaceHolder.Callback {
     public static Player[][] board;
